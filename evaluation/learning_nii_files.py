@@ -37,7 +37,7 @@ class view:
 
 
 def init_test_file():
-    base = r"C:\Users\danie\code\work\shadow_segmentation\data\\"
+    base = r"C:\Users\danie\code\work\shadow_segmentation\evaluation\data\\"
     # video data, in grayscale
     vid = r"CaMKII_DJ-Gi_CNO_3-21-22-Phase_3-new_cropped_part1_0000.nii.gz"
     # annotations, labeled [0...5].
@@ -55,19 +55,23 @@ def init_test_file():
     segm = jmg.get_fdata()[..., :lim]
     t = 0
 
-    # image_shape = img.shape               # Y x X x T
+    # DATA SHAPE IS INITIALLY Y x X x Time
     data = np.flip(data, 1)  # reverse X for my viewing pleasure
+    # turn data into a displayable imagee
     data = data[..., None] @ row(1, 1, 1)  # Y x X x ((T, 1) @ (1, 3)) = Y x X x T x 3
     data = np.swapaxes(data, 0, 2)  # T x X x Y x 3 (images, indexed by frame# first!)
+
+    # SEGMENTATION SHAPE IS INITIALLY Y x X x Time
+    segm = np.flip(segm, 1).T  # reverse X, then .T so shape is T x X x Y
 
     return data, segm
 
 
-highlight = [1, 2, 3, 4, 5]
-
-
+segmentation_ndx = [0, 1, 2, 3, 4, 5]
+highlights = []
+# TODO: make faster. toggling parts is painful
 def make_segments(data, segm):
-    global highlight
+    global segmentation_ndx
 
     # color of segments
     colors = np.array([
@@ -78,28 +82,45 @@ def make_segments(data, segm):
         [1, 0, 0],
         [1, 0, 1]
     ])
-    # image_shape = img.shape       # Y x X x T
-    segm = np.flip(segm, 1)  # reverse X for my viewing pleasure
-    segm = np.swapaxes(segm, 0, 2)  # T x X x Y (images, indexed by frame# first!)
+
     segm = segm.astype(int)
 
-    ndxs = np.isin(segm, highlight)
+    # show corresponding color on each value
+    # of the segmentations. this will need changed
+    # if files aren't only 0,1,...n
+    ndxs = np.isin(segm, segmentation_ndx)
     segn = np.where(ndxs, segm, 0)
 
+    # display colors on video data
     frames = data + 100 * colors[segn]
+
+    # format into a showable image
     segments = frames.astype(int).clip(0, 255)
-    # segments = frames.astype(float).clip(0, 1)
 
-    for seg in highlight:
-        ndxs_ = np.isin(segm, [seg])
-        segn_ = np.where(ndxs_, segm, 0)
-
-        print(segn)
+    # for seg in segmentation_ndx:
+    #     ndxs_ = np.isin(segm, [seg])
+    #     segn_ = np.where(ndxs_, segm, 0)
 
     return segments
 
 
 def in_player(vid, n=0, draw=lambda *x: (None, None)):
+    """
+    takes an array formatted like a video/images and adds keyboard controls:
+        a/d - move 1 frame forward/back
+        A/D - move 50 frames froward/back
+        j# -  jump to frame #, where # is a string of digits
+        # -   toggles the visibility of segment #
+
+    :param vid:
+    :type vid:
+    :param n:
+    :type n:
+    :param draw:
+    :type draw:
+    :return:
+    :rtype:
+    """
     figure, axes = plt.subplots()
     figure.canvas.manager.set_window_title('')
 
@@ -134,34 +155,37 @@ def in_player(vid, n=0, draw=lambda *x: (None, None)):
                 print(f"Invalid input: {inp}")
                 return
         elif (k := event.key).isnumeric():
-            if (g := int(k)) in highlight:
-                highlight.remove(g)
+            g = int(k)
+            if g in segmentation_ndx:
+                segmentation_ndx.remove(g)
             else:
-                highlight.append(g)
+                segmentation_ndx.append(g)
+
+            # update segments array with colors if we need.
+            # this is a very inefficient way to do this
             vid.set_vid()
         else:
             return
 
         # get frame n
         n = np.clip(n, 0, len(vid) - 1)
-
         try:
             success, frame = vid.get(n=n)
         except:
             success, frame = False, None
             return
 
-        #frame = vid[n]
+        # display
         if frame is not None:
             im.set_array(frame)
             figure.canvas.draw()
 
     figure.canvas.mpl_connect('key_press_event', on_key_press)
-
     plt.show()
 
 
 def main():
+
     bounds = array([200, 200])
     img = np.zeros((*bounds, 3))
     dot_5 = c2z2(2 * udisc(4, 15))

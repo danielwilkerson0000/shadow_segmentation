@@ -7,6 +7,24 @@ e = np.e
 pi = np.pi
 tau = 2 * np.pi
 
+def instance(cls):
+    return cls()
+
+@instance
+class RGB:
+    """
+    class for shorthands
+    """
+    R = array([255, 0, 0])
+    r = 0xff0000
+    G = array([0, 255, 0])
+    g = 0x00ff00
+    B = array([0, 0, 255])
+    b = 0x0000ff
+
+    def hex(self, x):
+        return str(x)[2:]
+
 def row(*x):
     arr = array(x)
     if len(arr.shape) == 1:
@@ -53,14 +71,6 @@ def int_(arr):
 
 def round_(arr):
     return np.vectorize(round)(arr)
-
-class RGB:
-    R = array([255, 0, 0])
-    r = "#ff0000"
-    G = array([0, 255, 0])
-    g = "#00ff00"
-    B = array([0, 0, 255])
-    b = "#0000ff"
 
 
 def uint(n, a=0, b=1, *, exc=True, inc=True):
