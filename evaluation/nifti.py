@@ -37,11 +37,10 @@ class view:
 
 
 def init_test_file():
-    base = r"C:\Users\danie\code\work\shadow_segmentation\\"
-    # da video
+    base = r"C:\Users\danie\code\work\shadow_segmentation\data\\"
+    # video data, in grayscale
     vid = r"CaMKII_DJ-Gi_CNO_3-21-22-Phase_3-new_cropped_part1_0000.nii.gz"
-
-    # da annotations, labeled [0...5].
+    # annotations, labeled [0...5].
     seg = r"CaMKII_DJ-Gi_CNO_3-21-22-Phase_3-new_cropped_part1.nii.gz"
 
     # load the nifti images
